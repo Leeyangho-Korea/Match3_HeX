@@ -41,7 +41,7 @@ public class GameManager : MonoBehaviour
         if (matches.Count > 0)
         {
             tileMatcher.ClearMatches(matches);
-            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(tileSpawner.swapDuration);
             yield return StartCoroutine(tileSpawner.FillEmptyTiles());
             StartCoroutine(CheckMatches());
         }

@@ -89,19 +89,24 @@ public class TileSpawner : MonoBehaviour
     }
 
     /// <summary>
-    /// 전체 타일 부드러운 이동
+    /// 모든 타일 병렬 이동 (딜레이 최소화)
     /// </summary>
     private IEnumerator AnimateCollapse()
     {
         var tiles = gridManager.Grid.Values.ToList();
+        // 모든 타일을 동시에 이동
         foreach (var t in tiles)
         {
             int x = t.GridPosition.x;
             int y = t.GridPosition.y;
-            float yOff = ((gridManager.columnHeights[x] % 2 == 0) ? (gridManager.columnHeights[x] / 2f - 0.5f) : (gridManager.columnHeights[x] / 2f));
+            float yOff = ((gridManager.columnHeights[x] % 2 == 0)
+                ? (gridManager.columnHeights[x] / 2f - 0.5f)
+                : (gridManager.columnHeights[x] / 2f));
             Vector3 target = gridManager.GetTileWorldPosition(x, y - yOff);
-            yield return MoveTo(t.transform, target, fallDuration);
+            StartCoroutine(MoveTo(t.transform, target, fallDuration));
         }
+        // 낙하 시간만큼만 대기
+        yield return new WaitForSeconds(fallDuration);
     }
 
     /// <summary>
