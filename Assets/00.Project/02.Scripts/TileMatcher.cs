@@ -1,88 +1,102 @@
+// TileMatcher.cs
 using System.Collections.Generic;
-using UnityEngine;
 using System.Linq;
+using UnityEngine;
 
-/// <summary>
-/// 헥사 offset(pointy-top) 3매치 매칭기
-/// - 직선 매치(3개 이상), 교차(T/X) 매치, 4개 마름모꼴 매치 지원
-/// </summary>
 public class TileMatcher : MonoBehaviour
 {
+    private GridManager _gm => GameManager.Instance.gridManager;
+
+    /// <summary>
+    /// odd‑q offset(pointy‑top) 헥사 그리드 6방향
+    /// </summary>
     private Vector2Int[] GetOffsetNeighbors(int col)
     {
-        if (col % 2 == 0)
-            return new[] { new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(-1, 0), new Vector2Int(0, -1), new Vector2Int(1, -1), new Vector2Int(-1, -1) };
-        else
-            return new[] { new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(-1, 0), new Vector2Int(0, -1), new Vector2Int(1, 1), new Vector2Int(-1, 1) };
+        if ((col & 1) == 1) // odd column
+            return new[] {
+                new Vector2Int( 1,  0), new Vector2Int( 0,  1),
+                new Vector2Int(-1,  0), new Vector2Int( 0, -1),
+                new Vector2Int( 1, -1), new Vector2Int(-1, -1)
+            };
+        else // even column
+            return new[] {
+                new Vector2Int( 1,  0), new Vector2Int( 0,  1),
+                new Vector2Int(-1,  0), new Vector2Int( 0, -1),
+                new Vector2Int( 1,  1), new Vector2Int(-1,  1)
+            };
     }
 
     public List<Tile> FindMatches(Dictionary<Vector2Int, Tile> grid)
     {
         var matched = new HashSet<Tile>();
 
-        // 헥사 축 3방향(동-서, 남북, 대각)
-        int[] axisDir = { 0, 1, 4 };
-        int[] axisInv = { 2, 3, 5 };
-
-        // 1) 직선 매치 (line matches)
+        // 1) 3연속 직선 매치 (3방향: 0↔2, 1↔3, 4↔5 인덱스 페어)
         foreach (var kv in grid)
         {
-            var startPos = kv.Key;
-            var startTile = kv.Value;
-            var type = startTile.Type;
-            var neighbors = GetOffsetNeighbors(startPos.x);
+            var centerPos = kv.Key;
+            var centerType = kv.Value.Type;
+            var offs = GetOffsetNeighbors(centerPos.x);
 
-            for (int a = 0; a < 3; a++)
+            // 인접 방향 쌍 페어: (0,2), (1,3), (4,5)
+            var dirPairs = new[] { (0, 2), (1, 3), (4, 5) };
+            foreach (var (i, j) in dirPairs)
             {
-                var dir = neighbors[axisDir[a]];
-                var inv = neighbors[axisInv[a]];
-                var line = new List<Tile> { startTile };
+                var line = new List<Tile> { grid[centerPos] };
 
-                // forward
-                var pos = startPos;
-                while (grid.TryGetValue(pos + dir, out var next) && next.Type == type)
+                // + 방향으로 이어붙이기
+                var cur = centerPos;
+                while (true)
                 {
-                    line.Add(next);
-                    pos += dir;
+                    var next = cur + offs[i];
+                    if (!grid.TryGetValue(next, out var t) || t.Type != centerType) break;
+                    line.Add(t);
+                    cur = next;
                 }
 
-                // backward
-                pos = startPos;
-                while (grid.TryGetValue(pos + inv, out var prev) && prev.Type == type)
+                // – 방향으로 이어붙이기
+                cur = centerPos;
+                while (true)
                 {
-                    line.Add(prev);
-                    pos += inv;
+                    var next = cur + offs[j];
+                    if (!grid.TryGetValue(next, out var t) || t.Type != centerType) break;
+                    line.Add(t);
+                    cur = next;
                 }
 
                 if (line.Count >= 3)
-                    foreach (var t in line)
-                        matched.Add(t);
+                    foreach (var t in line) matched.Add(t);
             }
         }
 
-        // 2) 4개 마름모꼴 매치 (diamond match)
+        // 2) 다이아몬드 매치: 서로 다른 2방향 조합(offA, offB, offA+offB)
         foreach (var kv in grid)
         {
-            var pos = kv.Key;
-            var center = kv.Value;
-            var type = center.Type;
-            var neighbors = GetOffsetNeighbors(pos.x);
+            var centerPos = kv.Key;
+            var centerType = kv.Value.Type;
+            var offs = GetOffsetNeighbors(centerPos.x);
 
-            // 각 축마다 마름모 확인: dir1, dir2 조합
-            for (int a = 0; a < 3; a++)
+            // 가능한 오프셋 조합 (이웃 델타 인덱스 중 2개)
+            var combos = new[] {
+                (0,1), (0,3), (1,2), (2,5), (3,4), (4,5),
+                (1,4), (2,3) // 대각선끼리도 검사
+            };
+
+            foreach (var (i, j) in combos)
             {
-                var d1 = neighbors[axisDir[a]];
-                var d2 = neighbors[axisInv[a]];
+                var a = offs[i];
+                var b = offs[j];
+                var pA = centerPos + a;
+                var pB = centerPos + b;
+                var pAB = centerPos + a + b;
 
-                // diamond 네 꼭짓점: center, center+d1, center+d2, center+(d1+d2)
-                if (grid.TryGetValue(pos + d1, out var t1) && t1.Type == type
-                    && grid.TryGetValue(pos + d2, out var t2) && t2.Type == type
-                    && grid.TryGetValue(pos + d1 + d2, out var t3) && t3.Type == type)
+                if (grid.TryGetValue(pA, out var tA) && tA.Type == centerType
+                 && grid.TryGetValue(pB, out var tB) && tB.Type == centerType
+                 && grid.TryGetValue(pAB, out var tAB) && tAB.Type == centerType)
                 {
-                    matched.Add(center);
-                    matched.Add(t1);
-                    matched.Add(t2);
-                    matched.Add(t3);
+                    matched.Add(grid[centerPos]);
+                    matched.Add(tA);
+                    matched.Add(tB);
+                    matched.Add(tAB);
                 }
             }
         }
@@ -92,7 +106,7 @@ public class TileMatcher : MonoBehaviour
 
     public void ClearMatches(List<Tile> matchedTiles)
     {
-        var grid = GameManager.Instance.gridManager.Grid;
+        var grid = _gm.Grid;
         foreach (var tile in matchedTiles)
         {
             grid.Remove(tile.GridPosition);

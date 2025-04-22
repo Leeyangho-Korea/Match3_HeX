@@ -40,10 +40,13 @@ public class GameManager : MonoBehaviour
         var matches = tileMatcher.FindMatches(gridManager.Grid);
         if (matches.Count > 0)
         {
+            // 1. 매칭된 타일 제거
             tileMatcher.ClearMatches(matches);
             yield return new WaitForSeconds(tileSpawner.swapDuration);
+
+            // 2. 떨어뜨리고 연쇄 매치까지 모두 처리
             yield return StartCoroutine(tileSpawner.FillEmptyTiles());
-            StartCoroutine(CheckMatches());
+            yield return StartCoroutine(CheckMatches());
         }
         else
         {
