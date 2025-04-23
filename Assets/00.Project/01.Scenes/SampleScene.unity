@@ -610,8 +610,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gridManager: {fileID: 1969936063}
   spawnAnchor: {fileID: 1492670559}
-  fallDuration: 0.4
+  fallDuration: 0.08
   swapDuration: 0.08
+  slideThreshold: 1.17
 --- !u!114 &1969936066
 MonoBehaviour:
   m_ObjectHideFlags: 0

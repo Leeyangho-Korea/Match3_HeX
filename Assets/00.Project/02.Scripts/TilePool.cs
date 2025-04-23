@@ -41,7 +41,7 @@ public class TilePool : MonoBehaviour
         tile.Initialize(type, gridPos, tileSprites[(int)type]);
         tile.name = $"Tile_{gridPos.x}_{gridPos.y}_{type}";
 
-        Debug.Log($"[GetTile] type : {type}, tileName : {tile.name}");
+        //Debug.Log($"[GetTile] type : {type}, tileName : {tile.name}");
         return tile;
     }
 
