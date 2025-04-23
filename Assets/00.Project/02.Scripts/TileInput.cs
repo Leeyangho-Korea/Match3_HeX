@@ -21,6 +21,10 @@ public class TileInput : MonoBehaviour
 
     private void Update()
     {
+
+        if (GameManager.Instance.IsInputBlocked)
+            return;
+
         // 1) 클릭 시 선택
         if (Input.GetMouseButtonDown(0))
         {
