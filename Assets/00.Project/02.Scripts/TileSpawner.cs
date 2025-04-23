@@ -64,7 +64,6 @@ public class TileSpawner : MonoBehaviour
                     if (lastSlideSuccess)
                     {
                         changed = true;
-                        Debug.Log($"슬라이드 후 재탐색 필요 (열: {srcCol})");
                     }
                 }
                 while (lastSlideSuccess);
@@ -116,7 +115,6 @@ public class TileSpawner : MonoBehaviour
 
     private IEnumerator SlideFromColumn(int srcCol)
     {
-        Debug.Log($"{srcCol} : 슬라이드 시도 시작");
         lastSlideSuccess = false;
         var grid = gridManager.Grid;
         int[] heights = gridManager.columnHeights;
@@ -124,7 +122,6 @@ public class TileSpawner : MonoBehaviour
         var srcKeys = grid.Keys.Where(k => k.x == srcCol).ToList();
         if (srcKeys.Count == 0)
         {
-            Debug.Log($"{srcCol} : 타일 없음");
             yield break;
         }
 
@@ -161,7 +158,6 @@ public class TileSpawner : MonoBehaviour
                     tile.GridPosition = dstPos;
                     grid[dstPos] = tile;
 
-                    Debug.Log($"{srcCol} → {dstCol} (중앙 연속 슬라이드)");
                     yield return StartCoroutine(MoveTo(tile.transform, dstWorld, swapDuration));
                     moved = true;
                     movedAny = true;
@@ -190,26 +186,8 @@ public class TileSpawner : MonoBehaviour
             Vector3 srcWorld = GetWorldPosition(srcPos);
             Vector3 dstWorld = GetWorldPosition(dstPos);
 
-            //if (srcWorld.y <= dstWorld.y + slideThreshold)
-            //{
-            //    Debug.Log($"{srcCol} → {srcWorld.y:F2} | {dstCol} → {dstWorld.y:F2} (슬라이드 불가, 높이 부족)");
-            //    continue;
-            //}
-
-            //Debug.Log($"{srcCol} → {dstCol} : 슬라이드 성공");
-            //var tile = grid[srcPos];
-            //grid.Remove(srcPos);
-            //tile.GridPosition = dstPos;
-            //grid[dstPos] = tile;
-            //yield return StartCoroutine(MoveTo(tile.transform, dstWorld, swapDuration));
-
-            //lastSlideSuccess = true;
-            //yield break;
-
             if (!grid.ContainsKey(dstPos))
             {
-                Debug.Log($"{srcCol} → {dstCol} : 슬라이드 성공 (위치 조건 대신 빈 칸으로 판단)");
-
                 var tile = grid[srcPos];
                 grid.Remove(srcPos);
                 tile.GridPosition = dstPos;
@@ -219,10 +197,7 @@ public class TileSpawner : MonoBehaviour
                 lastSlideSuccess = true;
                 yield break;
             }
-
         }
-
-
     }
 
     private IEnumerator SpawnAndSlideNewTile()

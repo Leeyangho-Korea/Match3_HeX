@@ -1,12 +1,14 @@
 using System.Collections;
+using Unity.Burst.CompilerServices;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
     public GridManager gridManager;
-    [SerializeField] private TileMatcher tileMatcher;
+    public TileMatcher tileMatcher;
     [SerializeField] private TileSpawner tileSpawner;
+    [SerializeField] private Hint hint;
     public bool IsInputBlocked { get; private set; }
 
     public void BlockInput(bool block)
@@ -22,12 +24,18 @@ public class GameManager : MonoBehaviour
         //StartCoroutine(CheckMatches());
     }
 
-   // IEnumerator StartCoroutine()
+    // IEnumerator StartCoroutine()
     //{
     //    yield return StartCoroutine(tileSpawner.FillEmptyTiles());
     //    yield return StartCoroutine(CheckMatches());
     //}
-
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.H))
+        {
+            hint.ShowHint();
+        }
+    }
     IEnumerator GameFlow()
     {
         BlockInput(true);
