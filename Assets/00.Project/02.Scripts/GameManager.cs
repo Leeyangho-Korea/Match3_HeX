@@ -12,8 +12,14 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         gridManager.GenerateGrid();
-        StartCoroutine(tileSpawner.FillEmptyTiles());
-        StartCoroutine(CheckMatches());
+        StartCoroutine(StartCoroutine());
+        //StartCoroutine(CheckMatches());
+    }
+
+    IEnumerator StartCoroutine()
+    {
+        yield return StartCoroutine(tileSpawner.FillEmptyTiles());
+        yield return StartCoroutine(CheckMatches());
     }
 
     private IEnumerator CheckMatches()

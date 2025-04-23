@@ -39,7 +39,9 @@ public class TilePool : MonoBehaviour
         // 랜덤 타입 지정
         TileType type = (TileType)Random.Range(0, tileSprites.Length);
         tile.Initialize(type, gridPos, tileSprites[(int)type]);
+        tile.name = $"Tile_{gridPos.x}_{gridPos.y}_{type}";
 
+        Debug.Log($"[GetTile] type : {type}, tileName : {tile.name}");
         return tile;
     }
 
