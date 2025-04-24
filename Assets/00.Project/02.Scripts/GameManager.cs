@@ -263,6 +263,8 @@ public class GameManager : MonoBehaviour
 
         var grid = gridManager.Grid;
 
+        yield return new WaitForSeconds(0.2f);
+
         _info_Shuffle.gameObject.SetActive(true);
         
         yield return new WaitForSeconds(0.2f);
