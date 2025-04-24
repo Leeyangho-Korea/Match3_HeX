@@ -60,6 +60,8 @@ public class Tile : MonoBehaviour
         if (IsHintAnimating)
             yield break;
 
+        if (Type == TileType.Egg) duration = 0.7f;
+
         IsHintAnimating = true;
         originalPosition = transform.position;
 

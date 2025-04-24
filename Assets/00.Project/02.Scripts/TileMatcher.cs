@@ -61,7 +61,7 @@ public class TileMatcher : MonoBehaviour
             var centerPos = kv.Key;
             var centerType = kv.Value.Type;
             var centerOffsets = GetOffsetNeighbors(centerPos.x);
-            if(centerType == TileType.Heart) continue; // 팽이는 매칭 제외
+            if(centerType == TileType.Egg) continue; // 팽이는 매칭 제외
 
             foreach (var (i, j) in dirPairs)
             {
@@ -108,7 +108,7 @@ public class TileMatcher : MonoBehaviour
             var center = kv.Key;
             var centerType = kv.Value.Type;
             var centerOffsets = GetOffsetNeighbors(center.x);
-            if (centerType == TileType.Heart) continue; // 팽이는 매칭 제외
+            if (centerType == TileType.Egg) continue; // 팽이는 매칭 제외
             // 네 방향 조합 조건
             var combos = new[] {
                 (0, 2, 5),
@@ -184,7 +184,7 @@ public class TileMatcher : MonoBehaviour
         // 일반 타일 제거
         foreach (var tile in matchedTiles)
         {
-            if (tile.Type != TileType.Heart)
+            if (tile.Type != TileType.Egg)
             {
                 grid.Remove(tile.GridPosition);
                 tile.gameObject.SetActive(false);
@@ -204,10 +204,10 @@ public class TileMatcher : MonoBehaviour
         }
 
         //UI표현
-        int normalMatchCount = matchedTiles.Count(t => t.Type != TileType.Heart);
+        int normalMatchCount = matchedTiles.Count(t => t.Type != TileType.Egg);
         GameManager.Instance.AddTile(normalMatchCount);
   
-        int removedHearts = hitObstacles.Count(t => t.Type == TileType.Heart
+        int removedHearts = hitObstacles.Count(t => t.Type == TileType.Egg
         && t.GetComponent<IObstacle>()?.IsRemovable == true);
         GameManager.Instance.AddHeart(removedHearts);
 

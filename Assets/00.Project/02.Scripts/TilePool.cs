@@ -48,7 +48,7 @@ public class TilePool : MonoBehaviour
 
         if (spawnPeg)
         {
-            type = TileType.Heart;
+            type = TileType.Egg;
             currentSpinningTopCount++;
 
             //  컴포넌트 동적으로 붙이기 (프리팹 따로 안 써도 됨!)
@@ -79,7 +79,7 @@ public class TilePool : MonoBehaviour
 
     public void ReturnTile(Tile tile)
     {
-        if (tile.Type == TileType.Heart)
+        if (tile.Type == TileType.Egg)
         {
             currentSpinningTopCount--;
         }

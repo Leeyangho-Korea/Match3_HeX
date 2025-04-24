@@ -29,7 +29,7 @@ public class ObstacleManager : MonoBehaviour
                 Vector2Int adj = tile.GridPosition + offset;
                 if (!grid.TryGetValue(adj, out var neighbor)) continue;
 
-                if (neighbor.Type == TileType.Heart && !hitObstacles.Contains(neighbor))
+                if (neighbor.Type == TileType.Egg && !hitObstacles.Contains(neighbor))
                 {
                     var obs = neighbor.GetComponent<IObstacle>();
                     obs?.OnNearbyMatch();

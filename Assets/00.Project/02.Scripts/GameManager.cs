@@ -172,20 +172,24 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator ReshuffleBoard()
     {
+
         Debug.Log("[Reshuffle]");
         BlockInput(true);
+
         var grid = gridManager.Grid;
 
-
         _info_Shuffle.gameObject.SetActive(true);
-        yield return new WaitForSeconds(0.5f);
+        
+        yield return new WaitForSeconds(0.2f);
+
+        yield return StartCoroutine(ShakeBoardEffect(0.3f, 0.1f)); // (지속 시간, 강도)
 
         // 1. 기존 타일 중 Heart 외 제거
         foreach (var kv in grid.ToList())
         {
             var tile = kv.Value;
 
-            if (tile.Type != TileType.Heart)
+            if (tile.Type != TileType.Egg)
             {
                 tile.gameObject.SetActive(false);
                 TilePool.Instance.ReturnTile(tile);
@@ -195,15 +199,32 @@ public class GameManager : MonoBehaviour
 
         yield return new WaitForSeconds(0.2f);
 
-        yield return StartCoroutine(_tileSpawner.FillEmptyTiles(isReshuffle: true));
-
-        yield return new WaitForSeconds(0.8f);
+        yield return StartCoroutine(_tileSpawner.FillEmptyTiles());
 
         _info_Shuffle.gameObject.SetActive(false);
-
+        yield return StartCoroutine(CheckMatches());
         BlockInput(false);
     }
 
+    private IEnumerator ShakeBoardEffect(float duration, float magnitude)
+    {
+        Transform board = gridManager.transform; // 또는 tile container parent
+        Vector3 originalPos = board.localPosition;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            float offsetX = Random.Range(-1f, 1f) * magnitude;
+            float offsetY = Random.Range(-1f, 1f) * magnitude;
+
+            board.localPosition = originalPos + new Vector3(offsetX, offsetY, 0);
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        board.localPosition = originalPos;
+    }
 
 
     public int tileCount { get; private set; } = 0;
