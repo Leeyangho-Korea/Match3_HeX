@@ -5,5 +5,6 @@ public enum TileType
     Orange,
     Purple,
     Red,
-    Yellow
+    Yellow,
+    Heart // 팽이와 같은 장애물
 }

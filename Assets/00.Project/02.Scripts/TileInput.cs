@@ -22,7 +22,7 @@ public class TileInput : MonoBehaviour
     private void Update()
     {
 
-        if (GameManager.Instance.IsInputBlocked)
+        if (GameManager.Instance.IsInputBlocked || GameManager.Instance.IsSwapping)
             return;
 
         // 1) 클릭 시 선택
@@ -36,10 +36,16 @@ public class TileInput : MonoBehaviour
         // 2) 드래그 후 릴리즈 시
         if (Input.GetMouseButtonUp(0) && _selected != null)
         {
+            //  다시 한 번 차단 검사
+            if (GameManager.Instance.IsInputBlocked || GameManager.Instance.IsSwapping)
+            {
+                _selected = null;
+                return;
+            }
+
             Vector2 release = _cam.ScreenToWorldPoint(Input.mousePosition);
             Vector2 dragDir = (release - (Vector2)_selected.transform.position).normalized;
 
-            // 2‑1) 반경 내의 모든 이웃 후보 수집
             var candidates = _gm.Grid.Values
                 .Where(t => t != _selected
                          && Vector2.Distance(t.transform.position,
@@ -53,7 +59,6 @@ public class TileInput : MonoBehaviour
                 return;
             }
 
-            // 2‑2) 드래그 방향과 가장 가까운 타일 선택
             float bestDot = float.NegativeInfinity;
             Tile bestTile = null;
             foreach (var t in candidates)
@@ -68,8 +73,11 @@ public class TileInput : MonoBehaviour
                 }
             }
 
-            if (bestTile != null)
+            // 💥 한번 더: 실행 직전 차단 확인
+            if (bestTile != null && !GameManager.Instance.IsInputBlocked)
+            {
                 StartCoroutine(GameManager.Instance.SwapAndMatch(_selected, bestTile));
+            }
 
             _selected = null;
         }

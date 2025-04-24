@@ -1,5 +1,7 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -7,9 +9,9 @@ public class TileMatcher : MonoBehaviour
 {
     private GridManager gridManager => GameManager.Instance.gridManager;
 
-    private Vector2Int[] GetOffsetNeighbors(int col)
+    public static Vector2Int[] GetOffsetNeighbors(int col)
     {
-        if (col < gridManager.columnHeights.Length / 2)
+        if (col < GameManager.Instance.gridManager.columnHeights.Length / 2)
         {
             return new[] {
                 new Vector2Int( 0, 1),     // 0 ↑
@@ -20,7 +22,7 @@ public class TileMatcher : MonoBehaviour
                 new Vector2Int( 1, 0)      // 5 ↘
             };
         }
-        else if (col > gridManager.columnHeights.Length / 2)
+        else if (col > GameManager.Instance.gridManager.columnHeights.Length / 2)
         {
             return new[] {
                 new Vector2Int( 0, 1),     // 0 ↑
@@ -59,6 +61,7 @@ public class TileMatcher : MonoBehaviour
             var centerPos = kv.Key;
             var centerType = kv.Value.Type;
             var centerOffsets = GetOffsetNeighbors(centerPos.x);
+            if(centerType == TileType.Heart) continue; // 팽이는 매칭 제외
 
             foreach (var (i, j) in dirPairs)
             {
@@ -80,12 +83,12 @@ public class TileMatcher : MonoBehaviour
                     cur += GetOffsetNeighbors(cur.x)[j];
                 }
 
-                if (linePos.Count >= 3 && IsLinear(centerPos, linePos))
+                if (linePos.Count >= 3)
                 {
                     foreach (var pos in linePos)
                         matched.Add(grid[pos]);
 
-                    Debug.Log($"[매치 성공] {linePos.Count}개: {string.Join(", ", linePos)}");
+                  //  Debug.Log($"[매치 성공] {linePos.Count}개: {string.Join(", ", linePos)}");
                 }
             }
         }
@@ -94,25 +97,6 @@ public class TileMatcher : MonoBehaviour
         matched.UnionWith(FindDiamondMatches(grid));
 
         return matched.ToList();
-    }
-
-    private bool IsLinear(Vector2Int center, List<Vector2Int> line)
-    {
-        return true;
-        if (line.Count < 3) return false;
-
-        var others = line.Where(p => p != center).ToList();
-        var baseVec = others[0] - center;
-
-        for (int i = 1; i < others.Count; i++)
-        {
-            var delta = others[i] - center;
-            int cross = baseVec.x * delta.y - baseVec.y * delta.x;
-            if (cross != 0)
-                return false;
-        }
-
-        return true;
     }
 
     private HashSet<Tile> FindDiamondMatches(Dictionary<Vector2Int, Tile> grid)
@@ -124,7 +108,7 @@ public class TileMatcher : MonoBehaviour
             var center = kv.Key;
             var centerType = kv.Value.Type;
             var centerOffsets = GetOffsetNeighbors(center.x);
-
+            if (centerType == TileType.Heart) continue; // 팽이는 매칭 제외
             // 네 방향 조합 조건
             var combos = new[] {
                 (0, 2, 5),
@@ -170,16 +154,57 @@ public class TileMatcher : MonoBehaviour
         return matched;
     }
 
-    public void ClearMatches(List<Tile> matchedTiles)
+    public IEnumerator ClearMatches(List<Tile> matchedTiles)
     {
-        var grid = gridManager.Grid;
+        GameManager.Instance.BlockInput(true);
 
+        var grid = gridManager.Grid;
+        float duration = 0.3f;
+
+        // 장애물에게 hit 전달, 그리고 hit된 애들 목록 받음
+        var hitObstacles = GameManager.Instance.obstacleManager.NotifyNearbyMatches(new HashSet<Tile>(matchedTiles));
+
+        // 일반 타일 애니메이션
         foreach (var tile in matchedTiles)
         {
-            Debug.Log($"{tile.GridPosition} 제거");
-            grid.Remove(tile.GridPosition);
-            tile.gameObject.SetActive(false);
-            TilePool.Instance.ReturnTile(tile);
+            GameManager.Instance.StartCoroutine(tile.PlayDestroyAnimation(duration));
         }
+
+        // 장애물 애니메이션도 동시에 처리
+        foreach (var obsTile in hitObstacles)
+        {
+            if (obsTile.GetComponent<IObstacle>()?.IsRemovable == true)
+            {
+                GameManager.Instance.StartCoroutine(obsTile.GetComponent<IObstacle>().PlayDestroyEffect());
+            }
+        }
+
+        yield return new WaitForSeconds(duration);
+
+        // 일반 타일 제거
+        foreach (var tile in matchedTiles)
+        {
+            if (tile.Type != TileType.Heart)
+            {
+                grid.Remove(tile.GridPosition);
+                tile.gameObject.SetActive(false);
+                TilePool.Instance.ReturnTile(tile);
+            }
+        }
+
+        // 장애물 제거
+        foreach (var tile in hitObstacles)
+        {
+            if (tile.GetComponent<IObstacle>()?.IsRemovable == true)
+            {
+                grid.Remove(tile.GridPosition);
+                tile.gameObject.SetActive(false);
+                TilePool.Instance.ReturnTile(tile);
+            }
+        }
+
+        GameManager.Instance.BlockInput(false);
     }
+
+
 }
