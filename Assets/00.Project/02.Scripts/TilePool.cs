@@ -7,7 +7,7 @@ public class TilePool : MonoBehaviour
 
     [Header("Tile Prefabs")]
     [SerializeField] private GameObject tilePrefab;
-
+    [SerializeField] private Transform tileParent;
     [Header("Tile Settings")]
     [SerializeField] private Sprite[] tileSprites;
     [SerializeField] private int initialSize = 100;
@@ -28,7 +28,7 @@ public class TilePool : MonoBehaviour
         {
             GameObject tileObj = Instantiate(tilePrefab);
             tileObj.SetActive(false);
-            tileObj.transform.SetParent(transform);
+            tileObj.transform.SetParent(tileParent);
             tilePool.Enqueue(tileObj.GetComponent<Tile>());
         }
     }

@@ -29,6 +29,7 @@ public class TileInput : MonoBehaviour
         // 1) 클릭 시 선택
         if (Input.GetMouseButtonDown(0))
         {
+            GameManager.Instance.hint.ClearHint();
             GameManager.Instance.UpdateInteraction();
             Vector2 wp = _cam.ScreenToWorldPoint(Input.mousePosition);
             var col = Physics2D.OverlapPoint(wp);

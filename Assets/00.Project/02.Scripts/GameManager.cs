@@ -13,7 +13,7 @@ public class GameManager : MonoBehaviour
     public TileMatcher tileMatcher;
     public ObstacleManager obstacleManager;
     [SerializeField] private TileSpawner _tileSpawner;
-    [SerializeField] private Hint _hint;
+    public Hint hint;
 
     [Header("UI")]
     [SerializeField] Text _text_Heart;
@@ -75,6 +75,10 @@ public class GameManager : MonoBehaviour
         {
            StartCoroutine(ReshuffleBoard());
         }
+        else if(Input.GetKeyDown(KeyCode.H))
+        {
+            StartCoroutine(AutoHint());
+        }
     }
 
     private IEnumerator GameFlow()
@@ -95,21 +99,16 @@ public class GameManager : MonoBehaviour
             var matches = tileMatcher.FindMatches(gridManager.Grid);
             if (matches.Count == 0) break;
 
-            // 매칭이 된 경우
             _timeSinceLastMatch = 0f;
             _waitingForAutoHint = false;
 
-            // 힌트 애니메이션 중단 (선택)
-            _hint.hintTileA?.StopHintAnimation();
-            _hint.hintTileB?.StopHintAnimation();
-            _hint.hintTileA = null;
-            _hint.hintTileB = null;
+            // 기존 힌트 애니메이션 중단 → Glow 힌트 제거로 변경
+            hint.ClearHint();
 
             yield return StartCoroutine(tileMatcher.ClearMatches(matches));
             yield return StartCoroutine(_tileSpawner.FillEmptyTiles());
         }
 
-        // 매칭 가능한 게 아예 없는 경우 → 리셋
         if (!tileMatcher.TryFindFirstValidSwap(gridManager.Grid, out _, out _))
         {
             yield return StartCoroutine(ReshuffleBoard());
@@ -117,6 +116,7 @@ public class GameManager : MonoBehaviour
 
         BlockInput(false);
     }
+
 
     private bool _isSwapping = false;
     public bool IsSwapping => _isSwapping;
@@ -245,7 +245,7 @@ public class GameManager : MonoBehaviour
     private IEnumerator AutoHint()
     {
         yield return new WaitForEndOfFrame(); // 살짝 딜레이
-        _hint.ShowHint();
+        hint.ShowHint();
         _timeSinceLastMatch = 0f;
         _waitingForAutoHint = false;
     }

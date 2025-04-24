@@ -212,7 +212,6 @@ public class TileSpawner : MonoBehaviour
 
         var startPos = new Vector2Int(mid, heights[mid]);
         var tile = TilePool.Instance.GetTile(startPos);
-        tile.transform.SetParent(gridManager.transform, true);
         tile.transform.position = spawnAnchor.position;
 
         var current = startPos;

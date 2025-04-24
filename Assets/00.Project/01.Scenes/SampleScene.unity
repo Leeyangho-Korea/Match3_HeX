@@ -280,6 +280,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 176140722}
   m_CullTransparentMesh: 1
+--- !u!1 &205323044
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 205323045}
+  m_Layer: 0
+  m_Name: GlowParent
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &205323045
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 205323044}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &254223201
 GameObject:
   m_ObjectHideFlags: 0
@@ -4066,6 +4097,7 @@ GameObject:
   - component: {fileID: 1969936068}
   - component: {fileID: 1969936069}
   - component: {fileID: 1969936070}
+  - component: {fileID: 1969936071}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -4148,7 +4180,7 @@ MonoBehaviour:
   tileMatcher: {fileID: 1969936064}
   obstacleManager: {fileID: 1969936070}
   _tileSpawner: {fileID: 1969936065}
-  _hint: {fileID: 1969936069}
+  hint: {fileID: 1969936069}
   _text_Heart: {fileID: 91884987}
   _text_Time: {fileID: 819307378}
   _text_Tile: {fileID: 1476012537}
@@ -4166,6 +4198,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tilePrefab: {fileID: 8637107384729804815, guid: 021a2216efd36774e95555f60e789e9c, type: 3}
+  tileParent: {fileID: 1516654669}
   tileSprites:
   - {fileID: 21300000, guid: 6a6b8fb9caaa75a42a40ce6e711326ad, type: 3}
   - {fileID: 21300000, guid: 6ff937dbb4003e94db0aaaa9c3448f9c, type: 3}
@@ -4200,8 +4233,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aa133841d9e0fd043a9b89e4e360d785, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hintTileA: {fileID: 0}
-  hintTileB: {fileID: 0}
 --- !u!114 &1969936070
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4217,6 +4248,20 @@ MonoBehaviour:
   eggSprite:
   - {fileID: 21300000, guid: dd0195dd2e35197409a81ec2bec769f5, type: 3}
   - {fileID: 21300000, guid: 4cbe0793eed5265478d49ce0fc5c3d30, type: 3}
+--- !u!114 &1969936071
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1969936058}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1ce643f0c7fc1241a87c33e38bb8fa4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  glowPrefab: {fileID: 2673205001381366621, guid: 9c12a806d439d9e4b820a66ee0c5e6d8, type: 3}
+  glowParent: {fileID: 205323045}
 --- !u!1 &1971375012
 GameObject:
   m_ObjectHideFlags: 0
@@ -4656,6 +4701,7 @@ SceneRoots:
   - {fileID: 648517794}
   - {fileID: 1969936062}
   - {fileID: 1516654669}
+  - {fileID: 205323045}
   - {fileID: 1492670559}
   - {fileID: 387730916}
   - {fileID: 1545926073}
