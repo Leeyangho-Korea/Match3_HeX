@@ -2,13 +2,14 @@ using System.Collections;
 using System.Linq;
 using TMPro;
 using Unity.Burst.CompilerServices;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
-
+    [SerializeField] CanvasGroup fadeCanvasGroup;
     public GridManager gridManager;
     public TileMatcher tileMatcher;
     public ObstacleManager obstacleManager;
@@ -23,6 +24,8 @@ public class GameManager : MonoBehaviour
     private float elapsedTime = 0f;
     private float _timeUpdateTick = 0f;
 
+    // 시작했는지?
+    private bool isStart = false;
     // 힌트 표현
     private float _timeSinceLastMatch = 0f;
     private const float autoHintDelay = 5f;
@@ -32,6 +35,7 @@ public class GameManager : MonoBehaviour
     private int _blockCounter = 0;
     public bool IsInputBlocked => _blockCounter > 0;
 
+    bool _reshuffleBoard = false; //보드 셔플중인지
     public void BlockInput(bool block)
     {
         if (block)
@@ -46,12 +50,18 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        FadeManager.Instance.fadeCanvasGroup = fadeCanvasGroup;
         gridManager.GenerateGrid();
-        StartCoroutine(GameFlow());
+        StartCoroutine(GameStartSequence());
     }
 
     private void Update()
     {
+        if (_reshuffleBoard || isStart == false)
+        {
+            return; // 보드 셔플 중에는 업데이트 하지 않음
+        }
+
         elapsedTime += Time.deltaTime;
         _timeUpdateTick += Time.deltaTime;
         _timeSinceLastMatch += Time.deltaTime;
@@ -81,12 +91,81 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private IEnumerator GameFlow()
+    private IEnumerator GameStartSequence()
     {
         BlockInput(true);
+
+        yield return StartCoroutine(FadeManager.Instance.FadeOut());
+
+        // 준비 ~ 시작 애니메이션
+        yield return StartCoroutine(PlayReadyStartUI());
+
+
         yield return StartCoroutine(_tileSpawner.FillEmptyTiles());
         yield return StartCoroutine(CheckMatches());
+        isStart = true;
         BlockInput(false);
+    }
+
+    [SerializeField] private RectTransform readyText;
+    [SerializeField] private RectTransform goText;
+    [SerializeField] private float slideDuration = 0.5f;
+    [SerializeField] private float holdTime = 0.8f;
+
+    private IEnumerator PlayReadyStartUI()
+    {
+        yield return StartCoroutine(PlayTextZoom(readyText));
+        yield return new WaitForSeconds(0.3f);
+        yield return StartCoroutine(PlayTextZoom(goText));
+        yield return new WaitForSeconds(0.3f);
+    }
+    private IEnumerator PlayTextZoom(RectTransform target)
+    {
+        TextMeshProUGUI textComp = target.GetComponent<TextMeshProUGUI>();
+
+        target.gameObject.SetActive(true);
+
+        float duration = 1.5f;
+        float elapsed = 0f;
+
+        Vector3 initialScale = Vector3.zero;
+        Vector3 peakScale = Vector3.one * 1.5f;
+        Vector3 finalScale = Vector3.zero;
+
+        // 커지기
+        while (elapsed < duration / 2f)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / (duration / 2f);
+            target.localScale = Vector3.Lerp(initialScale, peakScale, t);
+            yield return null;
+        }
+
+        elapsed = 0f;
+
+        // 작아지기
+        while (elapsed < duration / 2f)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / (duration / 2f);
+            target.localScale = Vector3.Lerp(peakScale, finalScale, t);
+            yield return null;
+        }
+
+        target.localScale = finalScale;
+        target.gameObject.SetActive(false);
+    }
+
+    private IEnumerator SlideRectTransform(RectTransform rt, Vector2 from, Vector2 to, float duration)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            rt.anchoredPosition = Vector2.Lerp(from, to, elapsed / duration);
+            yield return null;
+        }
+        rt.anchoredPosition = to;
     }
 
     // 매칭 검사
@@ -172,9 +251,15 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator ReshuffleBoard()
     {
-
         Debug.Log("[Reshuffle]");
         BlockInput(true);
+         _reshuffleBoard = true;
+
+        // 힌트가 있을 때 보드 초기화 확률은 없지만 이중 방지
+        {
+            hint.ClearHint();
+            UpdateInteraction(); // 힌트 초기화
+        }
 
         var grid = gridManager.Grid;
 
@@ -202,6 +287,9 @@ public class GameManager : MonoBehaviour
         yield return StartCoroutine(_tileSpawner.FillEmptyTiles());
 
         _info_Shuffle.gameObject.SetActive(false);
+        _reshuffleBoard = false;
+        yield return null;
+
         yield return StartCoroutine(CheckMatches());
         BlockInput(false);
     }

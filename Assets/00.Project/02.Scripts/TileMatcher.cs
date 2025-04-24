@@ -61,7 +61,7 @@ public class TileMatcher : MonoBehaviour
             var centerPos = kv.Key;
             var centerType = kv.Value.Type;
             var centerOffsets = GetOffsetNeighbors(centerPos.x);
-            if(centerType == TileType.Egg) continue; // 팽이는 매칭 제외
+            if (centerType == TileType.Egg) continue; // 팽이는 매칭 제외
 
             foreach (var (i, j) in dirPairs)
             {
@@ -88,7 +88,7 @@ public class TileMatcher : MonoBehaviour
                     foreach (var pos in linePos)
                         matched.Add(grid[pos]);
 
-                  //  Debug.Log($"[매치 성공] {linePos.Count}개: {string.Join(", ", linePos)}");
+                    //  Debug.Log($"[매치 성공] {linePos.Count}개: {string.Join(", ", linePos)}");
                 }
             }
         }
@@ -170,13 +170,13 @@ public class TileMatcher : MonoBehaviour
             GameManager.Instance.StartCoroutine(tile.PlayDestroyAnimation(duration));
         }
 
-        
+
         // 장애물 애니메이션도 동시에 처리
         foreach (var obsTile in hitObstacles)
         {
             if (obsTile.GetComponent<IObstacle>()?.IsRemovable == true)
             {
-               GameManager.Instance.StartCoroutine(obsTile.GetComponent<IObstacle>().PlayDestroyEffect());
+                GameManager.Instance.StartCoroutine(obsTile.GetComponent<IObstacle>().PlayDestroyEffect());
             }
         }
 
@@ -207,7 +207,7 @@ public class TileMatcher : MonoBehaviour
         //UI표현
         int normalMatchCount = matchedTiles.Count(t => t.Type != TileType.Egg);
         GameManager.Instance.AddTile(normalMatchCount);
-  
+
         int removedHearts = hitObstacles.Count(t => t.Type == TileType.Egg
         && t.GetComponent<IObstacle>()?.IsRemovable == true);
         GameManager.Instance.AddHeart(removedHearts);
@@ -252,9 +252,6 @@ public class TileMatcher : MonoBehaviour
                 }
             }
         }
-
         return false;
     }
-
-
 }
