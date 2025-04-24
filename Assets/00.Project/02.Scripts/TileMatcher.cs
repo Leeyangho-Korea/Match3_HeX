@@ -203,6 +203,14 @@ public class TileMatcher : MonoBehaviour
             }
         }
 
+        //UI표현
+        int normalMatchCount = matchedTiles.Count(t => t.Type != TileType.Heart);
+        GameManager.Instance.AddTile(normalMatchCount);
+  
+        int removedHearts = hitObstacles.Count(t => t.Type == TileType.Heart
+        && t.GetComponent<IObstacle>()?.IsRemovable == true);
+        GameManager.Instance.AddHeart(removedHearts);
+
         GameManager.Instance.BlockInput(false);
     }
 

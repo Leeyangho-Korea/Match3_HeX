@@ -3968,8 +3968,11 @@ MonoBehaviour:
   gridManager: {fileID: 1969936063}
   tileMatcher: {fileID: 1969936064}
   obstacleManager: {fileID: 1969936070}
-  tileSpawner: {fileID: 1969936065}
-  hint: {fileID: 1969936069}
+  _tileSpawner: {fileID: 1969936065}
+  _hint: {fileID: 1969936069}
+  _text_Heart: {fileID: 91884987}
+  _text_Time: {fileID: 819307378}
+  _text_Tile: {fileID: 1476012537}
 --- !u!114 &1969936067
 MonoBehaviour:
   m_ObjectHideFlags: 0
