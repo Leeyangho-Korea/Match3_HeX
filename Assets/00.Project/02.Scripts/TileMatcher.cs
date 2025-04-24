@@ -159,7 +159,7 @@ public class TileMatcher : MonoBehaviour
         GameManager.Instance.BlockInput(true);
 
         var grid = gridManager.Grid;
-        float duration = 0.3f;
+        float duration = 0.35f;
 
         // 장애물에게 hit 전달, 그리고 hit된 애들 목록 받음
         var hitObstacles = GameManager.Instance.obstacleManager.NotifyNearbyMatches(new HashSet<Tile>(matchedTiles));
@@ -170,12 +170,13 @@ public class TileMatcher : MonoBehaviour
             GameManager.Instance.StartCoroutine(tile.PlayDestroyAnimation(duration));
         }
 
+        
         // 장애물 애니메이션도 동시에 처리
         foreach (var obsTile in hitObstacles)
         {
             if (obsTile.GetComponent<IObstacle>()?.IsRemovable == true)
             {
-                GameManager.Instance.StartCoroutine(obsTile.GetComponent<IObstacle>().PlayDestroyEffect());
+               GameManager.Instance.StartCoroutine(obsTile.GetComponent<IObstacle>().PlayDestroyEffect());
             }
         }
 

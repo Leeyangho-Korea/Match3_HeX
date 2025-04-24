@@ -26,7 +26,7 @@ public class Tile : MonoBehaviour
     }
 
     // 매칭 제거 애니메이션
-    public IEnumerator PlayDestroyAnimation(float duration = 0.3f)
+    public IEnumerator PlayDestroyAnimation(float duration = 0.35f)
     {
         float elapsed = 0f;
         Vector3 originalScale = transform.localScale;
@@ -59,8 +59,6 @@ public class Tile : MonoBehaviour
     {
         if (IsHintAnimating)
             yield break;
-
-        if (Type == TileType.Egg) duration = 0.7f;
 
         IsHintAnimating = true;
         originalPosition = transform.position;
