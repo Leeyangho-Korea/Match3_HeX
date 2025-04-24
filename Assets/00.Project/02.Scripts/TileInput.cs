@@ -25,9 +25,11 @@ public class TileInput : MonoBehaviour
         if (GameManager.Instance.IsInputBlocked || GameManager.Instance.IsSwapping)
             return;
 
+
         // 1) 클릭 시 선택
         if (Input.GetMouseButtonDown(0))
         {
+            GameManager.Instance.UpdateInteraction();
             Vector2 wp = _cam.ScreenToWorldPoint(Input.mousePosition);
             var col = Physics2D.OverlapPoint(wp);
             if (col != null) _selected = col.GetComponent<Tile>();

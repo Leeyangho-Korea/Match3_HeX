@@ -214,5 +214,46 @@ public class TileMatcher : MonoBehaviour
         GameManager.Instance.BlockInput(false);
     }
 
+    public bool TryFindFirstValidSwap(Dictionary<Vector2Int, Tile> grid, out Tile tileA, out Tile tileB)
+    {
+        tileA = null;
+        tileB = null;
+
+        var positions = grid.Keys.ToList();
+
+        foreach (var pos in positions)
+        {
+            if (!grid.TryGetValue(pos, out var tA)) continue;
+
+            var neighbors = GetOffsetNeighbors(pos.x);
+            foreach (var dir in neighbors)
+            {
+                Vector2Int nPos = pos + dir;
+                if (!grid.TryGetValue(nPos, out var tB)) continue;
+
+                // 스왑 시뮬레이션
+                grid[pos] = tB;
+                grid[nPos] = tA;
+                (tA.GridPosition, tB.GridPosition) = (nPos, pos);
+
+                var matches = FindMatches(grid);
+
+                // 복원
+                grid[pos] = tA;
+                grid[nPos] = tB;
+                (tA.GridPosition, tB.GridPosition) = (pos, nPos);
+
+                if (matches.Count >= 3)
+                {
+                    tileA = tA;
+                    tileB = tB;
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
 
 }

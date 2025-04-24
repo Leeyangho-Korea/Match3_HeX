@@ -11,6 +11,8 @@ public class ObstacleManager : MonoBehaviour
         gridManager = GameManager.Instance.gridManager;
     }
 
+    public Sprite[] eggSprite;
+
     /// <summary>
     /// 매칭된 타일들 주변의 장애물에게 한 번만 알림
     /// </summary>

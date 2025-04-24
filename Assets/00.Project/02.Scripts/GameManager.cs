@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Linq;
+using TMPro;
 using Unity.Burst.CompilerServices;
 using UnityEngine;
 using UnityEngine.UI;
@@ -68,6 +70,11 @@ public class GameManager : MonoBehaviour
             _waitingForAutoHint = true;
             StartCoroutine(AutoHint());
         }
+
+        if(Input.GetKeyDown(KeyCode.Space))
+        {
+           StartCoroutine(ReshuffleBoard());
+        }
     }
 
     private IEnumerator GameFlow()
@@ -88,13 +95,24 @@ public class GameManager : MonoBehaviour
             var matches = tileMatcher.FindMatches(gridManager.Grid);
             if (matches.Count == 0) break;
 
+            // 매칭이 된 경우
             _timeSinceLastMatch = 0f;
             _waitingForAutoHint = false;
 
-            // 타일 제거
+            // 힌트 애니메이션 중단 (선택)
+            _hint.hintTileA?.StopHintAnimation();
+            _hint.hintTileB?.StopHintAnimation();
+            _hint.hintTileA = null;
+            _hint.hintTileB = null;
+
             yield return StartCoroutine(tileMatcher.ClearMatches(matches));
-            // 타일 채우기
             yield return StartCoroutine(_tileSpawner.FillEmptyTiles());
+        }
+
+        // 매칭 가능한 게 아예 없는 경우 → 리셋
+        if (!tileMatcher.TryFindFirstValidSwap(gridManager.Grid, out _, out _))
+        {
+            yield return StartCoroutine(ReshuffleBoard());
         }
 
         BlockInput(false);
@@ -149,6 +167,44 @@ public class GameManager : MonoBehaviour
         b.GridPosition = pa;
     }
 
+    // 타일 재셔플
+    [SerializeField] private GameObject _info_Shuffle;
+
+    private IEnumerator ReshuffleBoard()
+    {
+        Debug.Log("[Reshuffle]");
+        BlockInput(true);
+        var grid = gridManager.Grid;
+
+
+        _info_Shuffle.gameObject.SetActive(true);
+        yield return new WaitForSeconds(0.5f);
+
+        // 1. 기존 타일 중 Heart 외 제거
+        foreach (var kv in grid.ToList())
+        {
+            var tile = kv.Value;
+
+            if (tile.Type != TileType.Heart)
+            {
+                tile.gameObject.SetActive(false);
+                TilePool.Instance.ReturnTile(tile);
+                grid.Remove(kv.Key);
+            }
+        }
+
+        yield return new WaitForSeconds(0.2f);
+
+        yield return StartCoroutine(_tileSpawner.FillEmptyTiles(isReshuffle: true));
+
+        yield return new WaitForSeconds(0.8f);
+
+        _info_Shuffle.gameObject.SetActive(false);
+
+        BlockInput(false);
+    }
+
+
 
     public int tileCount { get; private set; } = 0;
     public int heartCount { get; private set; } = 0;
@@ -169,6 +225,13 @@ public class GameManager : MonoBehaviour
     {
         yield return new WaitForEndOfFrame(); // 살짝 딜레이
         _hint.ShowHint();
+        _timeSinceLastMatch = 0f;
+        _waitingForAutoHint = false;
+    }
+
+    // 인터랙션이 있을 때 힌트 동작 X
+    public void UpdateInteraction()
+    {
         _timeSinceLastMatch = 0f;
         _waitingForAutoHint = false;
     }

@@ -50,26 +50,27 @@ public class TilePool : MonoBehaviour
         {
             type = TileType.Heart;
             currentSpinningTopCount++;
-            tile.GetComponent<SpriteRenderer>().color = Color.red; // 색상 초기화
-            // 팽이 컴포넌트 동적으로 붙이기 (프리팹 따로 안 써도 됨!)
-            if (tile.GetComponent<SpinningTopObstacle>() == null)
-                tile.gameObject.AddComponent<SpinningTopObstacle>();
+
+            //  컴포넌트 동적으로 붙이기 (프리팹 따로 안 써도 됨!)
+            if (tile.GetComponent<EggObstacle>() == null)
+                tile.gameObject.AddComponent<EggObstacle>();
         }
         else
         {
             // 일반 타일 타입 선택
             int max = tileSprites.Length;
             type = (TileType)Random.Range(0, max - 1); // 팽이를 enum 마지막에 배치했다는 가정
-            tile.GetComponent<SpriteRenderer>().color = Color.white; // 색상 초기화
 
+       
             // 기존에 붙어있던 컴포넌트 제거 (재사용된 경우 대비)
-            var peg = tile.GetComponent<SpinningTopObstacle>();
+            var peg = tile.GetComponent<EggObstacle>();
             if (peg != null)
                 Destroy(peg);
         }
 
         // 위치 설정 포함 초기화 (꼭 필요!)
         tile.Initialize(type, gridPos, tileSprites[(int)type]);
+        tile.GetComponent<SpriteRenderer>().color = Color.white; // 색상 초기화
         tile.name = type.ToString() + "_" + gridPos.x + "_" + gridPos.y;
         tile.transform.position = GameManager.Instance.gridManager.GetTileWorldPosition(gridPos.x, gridPos.y);
 

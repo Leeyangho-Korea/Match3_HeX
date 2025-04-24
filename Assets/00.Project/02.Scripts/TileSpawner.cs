@@ -47,7 +47,7 @@ public class TileSpawner : MonoBehaviour
         explorationOrder = order.ToArray();
     }
 
-    public IEnumerator FillEmptyTiles()
+    public IEnumerator FillEmptyTiles(bool isReshuffle = false)
     {
         GameManager.Instance.BlockInput(true);
 
@@ -74,11 +74,33 @@ public class TileSpawner : MonoBehaviour
         } while (changed);
 
         var grid = gridManager.Grid;
-        int totalSlots = gridManager.columnHeights.Sum();
-        int missing = totalSlots - grid.Count;
 
-        for (int i = 0; i < missing; i++)
-            yield return StartCoroutine(SpawnAndSlideNewTile());
+
+        if (isReshuffle)
+        {
+            for (int x = 0; x < gridManager.columnHeights.Length; x++)
+            {
+                int height = gridManager.columnHeights[x];
+                for (int y = 0; y < height; y++)
+                {
+                    Vector2Int pos = new Vector2Int(x, y);
+
+                    if (!grid.ContainsKey(pos) || grid[pos] == null || !grid[pos].gameObject.activeInHierarchy)
+                    {
+                        yield return StartCoroutine(SpawnAndSlideNewTileTo(pos));
+                    }
+                }
+            }
+        }
+        else
+        {
+            // 기존 방식: 위에서 랜덤으로 빈 칸 채움
+            int totalSlots = gridManager.columnHeights.Sum();
+            int missing = totalSlots - grid.Count;
+
+            for (int i = 0; i < missing; i++)
+                yield return StartCoroutine(SpawnAndSlideNewTile());
+        }
 
         GameManager.Instance.BlockInput(false);
     }
@@ -234,6 +256,22 @@ public class TileSpawner : MonoBehaviour
         grid[current] = tile;
     }
 
+
+    // Reshulle
+    public IEnumerator SpawnAndSlideNewTileTo(Vector2Int gridPos)
+    {
+        var tile = TilePool.Instance.GetTile(gridPos);
+        Vector3 startPos =   GetSpawnWorldPosition(gridPos.x); // 위쪽에서 생성
+        Vector3 targetPos = gridManager.GridToWorld(gridPos);
+
+        tile.transform.position = startPos;
+        tile.GridPosition = gridPos;
+
+        gridManager.Grid[gridPos] = tile;
+
+        yield return StartCoroutine(MoveTo(tile.transform, targetPos, fallDuration));
+    }
+
     public IEnumerator MoveTo(Transform obj, Vector3 target, float duration)
     {
         Vector3 start = obj.position;
@@ -265,4 +303,13 @@ public class TileSpawner : MonoBehaviour
         var w2 = gridManager.GetTileWorldPosition(x, logicalY);
         return new Vector3(w2.x, w2.y, 0f);
     }
+
+    private Vector3 GetSpawnWorldPosition(int columnIndex)
+{
+    // 열의 높이만큼 위로 생성 (한 칸 위)
+    int spawnY = gridManager.columnHeights[columnIndex];
+    Vector2Int spawnGridPos = new Vector2Int(columnIndex, spawnY);
+
+    return GetWorldPosition(spawnGridPos);
+}
 }

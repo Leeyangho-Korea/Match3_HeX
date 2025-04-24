@@ -7,6 +7,8 @@ public class Tile : MonoBehaviour
     public TileType Type { get; private set; }
 
     private SpriteRenderer spriteRenderer;
+    public bool IsHintAnimating { get; private set; } = false;
+    private Coroutine _hintRoutine;
 
     public void Initialize(TileType type, Vector2Int gridPos, Sprite sprite)
     {
@@ -51,27 +53,37 @@ public class Tile : MonoBehaviour
     }
 
     // 힌트 애니메이션
+    private Vector3 originalPosition;
+
     public IEnumerator PlayHintAnimation(float duration = 0.4f, float amplitude = 0.1f, int frequency = 4)
     {
+        if (IsHintAnimating)
+            yield break;
 
-        Vector3 originalPos = transform.position;
+        IsHintAnimating = true;
+        originalPosition = transform.position;
+
         float elapsed = 0f;
-
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
             float percent = elapsed / duration;
-
-            // Sine 파형 기반 흔들림
             float offset = Mathf.Sin(percent * frequency * 2 * Mathf.PI) * amplitude;
-            transform.position = originalPos + Vector3.right * offset;
-
+            transform.position = originalPosition + Vector3.right * offset;
             yield return null;
         }
 
-        // 원래 위치로 정확히 복귀
-        transform.position = originalPos;
+        transform.position = originalPosition;
+        IsHintAnimating = false;
+    }
 
+    public void StopHintAnimation()
+    {
+        if (!IsHintAnimating) return;
+
+        StopAllCoroutines(); // 안전하게 전체 중단
+        transform.position = originalPosition;
+        IsHintAnimating = false;
     }
 
 }

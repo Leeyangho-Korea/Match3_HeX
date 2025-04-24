@@ -104,4 +104,18 @@ public class GridManager : MonoBehaviour
             Debug.Log($"[Grid] ({pos.x},{pos.y}) → {type}");
         }
     }
+
+    public Vector3 GridToWorld(Vector2Int gridPos)
+    {
+        int x = gridPos.x;
+        int y = gridPos.y;
+        int height = columnHeights[x];
+
+        float yCenterOffset = (height % 2 == 0) ? (height / 2f - 0.5f) : (height / 2f);
+        float logicalY = y - yCenterOffset;
+
+        Vector2 pos2D = GetTileWorldPosition(x, logicalY);
+        return new Vector3(pos2D.x, pos2D.y, 0f); // 3D 위치로 반환
+    }
+
 }
