@@ -299,17 +299,11 @@ public class GameManager : MonoBehaviour
 
             if (tile.Type != TileType.Egg && tile.IsBomb == false)
             {
-               // tile.gameObject.SetActive(false);
-            //    TilePool.Instance.ReturnTile(tile);
-             //   grid.Remove(kv.Key);
              TileType type = (TileType)Random.Range(0, 6);
                 tile.SetType(type, TilePool.Instance.GetSprite(type));
             }
         }
 
-        //      yield return new WaitForSeconds(0.2f);
-
-        //   yield return StartCoroutine(_tileSpawner.FillEmptyTiles());
         yield return new WaitForSeconds(1f);
         _info_Shuffle.gameObject.SetActive(false);
         _reshuffleBoard = false;

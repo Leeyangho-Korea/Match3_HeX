@@ -354,17 +354,26 @@ public class TileMatcher : MonoBehaviour
                 if (!grid.TryGetValue(nPos, out var tB)) continue;
                 if (tB.Type == TileType.Egg) continue;
 
-                // 스왑 시뮬레이션
-                grid[pos] = tB;
-                grid[nPos] = tA;
-                (tA.GridPosition, tB.GridPosition) = (nPos, pos);
+                // 시뮬레이션용 그리드 생성
+                var simulatedGrid = new Dictionary<Vector2Int, Tile>(grid);
 
-                var matches = FindMatches(grid);
+                // 스왑
+                simulatedGrid[pos] = tB;
+                simulatedGrid[nPos] = tA;
 
-                // 복원
-                grid[pos] = tA;
-                grid[nPos] = tB;
-                (tA.GridPosition, tB.GridPosition) = (pos, nPos);
+                // 타일 좌표도 시뮬레이션
+                var originalPosA = tA.GridPosition;
+                var originalPosB = tB.GridPosition;
+
+                tA.GridPosition = nPos;
+                tB.GridPosition = pos;
+
+                // 매칭 탐색
+                var matches = FindMatches(simulatedGrid);
+
+                // 원상 복구
+                tA.GridPosition = originalPosA;
+                tB.GridPosition = originalPosB;
 
                 if (matches.Count >= 3)
                 {
@@ -374,6 +383,8 @@ public class TileMatcher : MonoBehaviour
                 }
             }
         }
+
         return false;
     }
+
 }
