@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Splash : MonoBehaviour
 {
@@ -7,9 +8,10 @@ public class Splash : MonoBehaviour
     [Header("Splash Timing")]
     [SerializeField] private float splashDuration = 2.5f; // 로고 보여지는 시간
     [SerializeField] private string nextSceneName = "MainScene"; // 다음 씬 이름
-
+    [SerializeField] private Text _text_version;
     private void Start()
     {
+        _text_version.text = "Version " + Application.version;
         StartCoroutine(PlaySplashSequence());
     }
 
