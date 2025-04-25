@@ -217,6 +217,10 @@ public class GameManager : MonoBehaviour
         // 스왑한 두 타일이 모두 폭탄이면 특수 폭발 처리
         if (a.IsBomb && b.IsBomb)
         {
+            {
+                hint.ClearHint();
+                UpdateInteraction(); // 힌트 초기화
+            }
             yield return StartCoroutine(TriggerDoubleBombExplosion(a, b));
             BlockInput(false);
             _isSwapping = false;
@@ -369,14 +373,7 @@ public class GameManager : MonoBehaviour
     {
         var grid = gridManager.Grid;
 
-        var explosionTiles = new HashSet<Tile>();
-
-        foreach (var center in new[] { a, b })
-        {
-            var expanded = GetExplosionTiles(center, 2); // ← 2칸 반경!
-            explosionTiles.UnionWith(expanded);
-        }
-
+        var explosionTiles = GetChainedExplosionTiles(a, b, 2, 1); // 스페셜 : 2링, 그 안에 있는 폭탄은 1링
 
         // 애니메이션
         float duration = 0.35f;
@@ -431,6 +428,7 @@ public class GameManager : MonoBehaviour
         yield return StartCoroutine(_tileSpawner.FillEmptyTiles());
         yield return StartCoroutine(CheckMatches());
     }
+    // 스페셜 폭발
     private HashSet<Tile> GetExplosionTiles(Tile center, int radius)
     {
         var result = new HashSet<Tile>();
@@ -466,4 +464,34 @@ public class GameManager : MonoBehaviour
         return result;
     }
 
+    // 스페셜 폭발 반경의 폭발 반경
+    private HashSet<Tile> GetChainedExplosionTiles(Tile a, Tile b, int firstRadius, int chainRadius)
+    {
+        var result = new HashSet<Tile>();
+        var visitedBombs = new HashSet<Tile>();
+        var queue = new Queue<(Tile tile, int radius)>();
+
+        // 처음 폭탄 두 개는 firstRadius로 시작 (e.g. 2)
+        queue.Enqueue((a, firstRadius));
+        queue.Enqueue((b, firstRadius));
+
+        while (queue.Count > 0)
+        {
+            var (center, radius) = queue.Dequeue();
+
+            if (!visitedBombs.Add(center)) continue;
+
+            var area = GetExplosionTiles(center, radius);
+            result.UnionWith(area);
+
+            // 그 안에 있는 추가 폭탄 → chainRadius(=1)로 확장
+            foreach (var tile in area)
+            {
+                if (tile.IsBomb && !visitedBombs.Contains(tile))
+                    queue.Enqueue((tile, chainRadius));
+            }
+        }
+
+        return result;
+    }
 }
