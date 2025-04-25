@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 /// <summary>
@@ -50,7 +51,7 @@ public class TileSpawner : MonoBehaviour
     public IEnumerator FillEmptyTiles()
     {
         GameManager.Instance.BlockInput(true);
-
+        GameManager.Instance.IsFilling = true;
         yield return StartCoroutine(CollapseVerticalAnimated());
 
         bool changed;
@@ -80,6 +81,7 @@ public class TileSpawner : MonoBehaviour
         for (int i = 0; i < missing; i++)
             yield return StartCoroutine(SpawnAndSlideNewTile());
 
+        GameManager.Instance.IsFilling = false;
         GameManager.Instance.BlockInput(false);
     }
 

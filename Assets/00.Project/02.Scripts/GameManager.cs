@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using Unity.Burst.CompilerServices;
@@ -28,8 +29,11 @@ public class GameManager : MonoBehaviour
     private bool isStart = false;
     // 힌트 표현
     private float _timeSinceLastMatch = 0f;
-    private const float autoHintDelay = 5f;
+    private const float autoHintDelay = 3f;
     private bool _waitingForAutoHint = false;
+
+    private bool _isFilling = false; // 타일이 채워지는 중인지
+    public bool IsFilling { get => _isFilling; set => _isFilling = value; } 
 
     // 입력 차단 카운터 방식
     private int _blockCounter = 0;
@@ -64,7 +68,9 @@ public class GameManager : MonoBehaviour
 
         elapsedTime += Time.deltaTime;
         _timeUpdateTick += Time.deltaTime;
-        _timeSinceLastMatch += Time.deltaTime;
+
+        if(IsFilling == false)
+            _timeSinceLastMatch += Time.deltaTime;
 
         if (_timeUpdateTick >= 1f)
         {
@@ -75,7 +81,7 @@ public class GameManager : MonoBehaviour
         }
 
         //  자동 힌트
-        if (_timeSinceLastMatch >= autoHintDelay && !_waitingForAutoHint)
+        if (_timeSinceLastMatch >= autoHintDelay && !_waitingForAutoHint && IsFilling == false)
         {
             _waitingForAutoHint = true;
             StartCoroutine(AutoHint());
@@ -207,6 +213,17 @@ public class GameManager : MonoBehaviour
 
         _isSwapping = true;
         BlockInput(true);
+
+        // 스왑한 두 타일이 모두 폭탄이면 특수 폭발 처리
+        if (a.IsBomb && b.IsBomb)
+        {
+            yield return StartCoroutine(TriggerDoubleBombExplosion(a, b));
+            BlockInput(false);
+            _isSwapping = false;
+            yield break;
+        }
+
+
 
         Vector3 posA = a.transform.position;
         Vector3 posB = b.transform.position;
@@ -346,4 +363,107 @@ public class GameManager : MonoBehaviour
         _timeSinceLastMatch = 0f;
         _waitingForAutoHint = false;
     }
+
+    // 스페셜 폭발기능
+    private IEnumerator TriggerDoubleBombExplosion(Tile a, Tile b)
+    {
+        var grid = gridManager.Grid;
+
+        var explosionTiles = new HashSet<Tile>();
+
+        foreach (var center in new[] { a, b })
+        {
+            var expanded = GetExplosionTiles(center, 2); // ← 2칸 반경!
+            explosionTiles.UnionWith(expanded);
+        }
+
+
+        // 애니메이션
+        float duration = 0.35f;
+        foreach (var tile in explosionTiles)
+        {
+            if (tile.Type != TileType.Egg)
+            {
+                StartCoroutine(tile.PlayDestroyAnimation(duration));
+            }
+        }
+
+        // 알에게도 영향 주기
+        var hitObstacles = obstacleManager.NotifyNearbyMatches(explosionTiles);
+
+        foreach (var obs in hitObstacles)
+        {
+            if (obs.GetComponent<IObstacle>()?.IsRemovable == true)
+            {
+                StartCoroutine(obs.GetComponent<IObstacle>().PlayDestroyEffect());
+            }
+        }
+
+        yield return new WaitForSeconds(duration);
+
+        // 제거 처리
+        foreach (var tile in explosionTiles)
+        {
+            if (tile.Type != TileType.Egg)
+            {
+                grid.Remove(tile.GridPosition);
+                tile.SetBomb(false, null); // bomb 제거
+                tile.gameObject.SetActive(false);
+                TilePool.Instance.ReturnTile(tile);
+            }
+        }
+
+        foreach (var tile in hitObstacles)
+        {
+            if (tile.GetComponent<IObstacle>()?.IsRemovable == true)
+            {
+                grid.Remove(tile.GridPosition);
+                tile.gameObject.SetActive(false);
+                TilePool.Instance.ReturnTile(tile);
+            }
+        }
+
+        AddTile(explosionTiles.Count(t => t.Type != TileType.Egg));
+        AddHeart(hitObstacles.Count(t =>
+            t.Type == TileType.Egg &&
+            t.GetComponent<IObstacle>()?.IsRemovable == true));
+
+        yield return StartCoroutine(_tileSpawner.FillEmptyTiles());
+        yield return StartCoroutine(CheckMatches());
+    }
+    private HashSet<Tile> GetExplosionTiles(Tile center, int radius)
+    {
+        var result = new HashSet<Tile>();
+        var visited = new HashSet<Vector2Int>();
+        var queue = new Queue<(Vector2Int pos, int depth)>();
+
+        var grid = gridManager.Grid;
+
+        queue.Enqueue((center.GridPosition, 0));
+        visited.Add(center.GridPosition);
+
+        while (queue.Count > 0)
+        {
+            var (currentPos, depth) = queue.Dequeue();
+
+            if (grid.TryGetValue(currentPos, out var tile))
+                result.Add(tile);
+
+            if (depth >= radius)
+                continue;
+
+            var offsets = TileMatcher.GetOffsetNeighbors(currentPos.x);
+            foreach (var off in offsets)
+            {
+                var next = currentPos + off;
+                if (visited.Add(next)) // add는 중복이면 false라서 한 번만 들어감
+                {
+                    queue.Enqueue((next, depth + 1));
+                }
+            }
+        }
+
+        return result;
+    }
+
 }

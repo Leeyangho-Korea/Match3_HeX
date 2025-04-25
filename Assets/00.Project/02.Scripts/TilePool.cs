@@ -59,7 +59,7 @@ public class TilePool : MonoBehaviour
         {
             // 일반 타일 타입 선택
             int max = tileSprites.Length;
-            type = (TileType)Random.Range(0, max - 1); // 팽이를 enum 마지막에 배치했다는 가정
+            type = (TileType)Random.Range(0, 6); // 팽이를 enum 마지막에 배치했다는 가정
 
        
             // 기존에 붙어있던 컴포넌트 제거 (재사용된 경우 대비)
@@ -71,6 +71,7 @@ public class TilePool : MonoBehaviour
         // 위치 설정 포함 초기화 (꼭 필요!)
         tile.Initialize(type, gridPos, tileSprites[(int)type]);
         tile.GetComponent<SpriteRenderer>().color = Color.white; // 색상 초기화
+        tile.SetBomb(false, null);
         tile.name = type.ToString() + "_" + gridPos.x + "_" + gridPos.y;
         tile.transform.position = GameManager.Instance.gridManager.GetTileWorldPosition(gridPos.x, gridPos.y);
 
@@ -87,5 +88,33 @@ public class TilePool : MonoBehaviour
         tile.gameObject.SetActive(false);
         tile.transform.SetParent(transform);
         tilePool.Enqueue(tile);
+    }
+
+    public Sprite GetBombSprite(TileType tileType)
+    {
+        Sprite sprite = null;
+        switch (tileType)
+        {
+            case TileType.Blue:
+                sprite = tileSprites[(int)TileType.BlueBomb];
+                break;
+            case TileType.Green:
+                sprite = tileSprites[(int)TileType.GreenBomb];
+                break;
+            case TileType.Orange:
+                sprite = tileSprites[(int)TileType.OrangeBomb];
+                break;
+            case TileType.Purple:
+                sprite = tileSprites[(int)TileType.PurpleBomb];
+                break;
+            case TileType.Red:
+                sprite = tileSprites[(int)TileType.RedBomb];
+                break;
+            case TileType.Yellow:
+                sprite = tileSprites[(int)TileType.YellowBomb];
+                break;
+        }
+
+        return sprite;
     }
 }

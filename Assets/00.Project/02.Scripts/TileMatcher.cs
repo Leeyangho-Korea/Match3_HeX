@@ -61,7 +61,6 @@ public class TileMatcher : MonoBehaviour
             var centerTile = kv.Value;
             var centerType = centerTile.Type;
             if (centerType == TileType.Egg) continue;
-
             var centerOffsets = GetOffsetNeighbors(centerPos.x);
 
             foreach (var (i, j) in dirPairs)
@@ -106,7 +105,6 @@ public class TileMatcher : MonoBehaviour
             var centerTile = kv.Value;
             var centerType = centerTile.Type;
             if (centerType == TileType.Egg) continue;
-
             var centerOffsets = GetOffsetNeighbors(center.x);
 
             var combos = new[] {
@@ -159,16 +157,73 @@ public class TileMatcher : MonoBehaviour
         var grid = gridManager.Grid;
         float duration = 0.35f;
 
-        // 장애물에 알림
-        var hitObstacles = GameManager.Instance.obstacleManager.NotifyNearbyMatches(new HashSet<Tile>(matchedTiles));
+        // 1. 매칭 그룹 분리
+        var groups = GroupMatches(matchedTiles);
 
-        // 일반 타일 애니메이션
-        foreach (var tile in matchedTiles)
+        // 폭탄 생성 제외하고 일단 매칭된 애들 모음
+        var finalMatched = new HashSet<Tile>();
+
+        // 알에게 알릴 매칭타일
+        var forObstacles = new HashSet<Tile>();
+        foreach (var group in groups)
+        {
+            if (group.Count >= 4)
+            {
+                int bombIndex = group.Count / 2;
+                var bombTile = group[bombIndex];
+                bombTile.SetBomb(true, TilePool.Instance.GetBombSprite(bombTile.Type));
+                forObstacles.Add(bombTile);
+                foreach (var tile in group)
+                {
+                    if (tile != bombTile)
+                        finalMatched.Add(tile);
+                }
+            }
+            else
+            {
+                finalMatched.UnionWith(group);
+            }
+        }
+
+        // 연쇄 폭발은 그룹 루프 끝나고 처리!
+        var alreadyExploded = new HashSet<Tile>();
+        bool chainReaction;
+        do
+        {
+            chainReaction = false;
+
+            var extraBombs = finalMatched
+                .Where(t => t.IsBomb)
+                .Where(bomb => !alreadyExploded.Contains(bomb))
+                .ToList();
+
+            foreach (var bomb in extraBombs)
+            {
+                alreadyExploded.Add(bomb);
+                var explosion = GetBombExplosion(bomb);
+
+                if (explosion.Any(t => !finalMatched.Contains(t)))
+                    chainReaction = true;
+
+                finalMatched.UnionWith(explosion);
+            }
+
+        } while (chainReaction);
+
+
+
+        forObstacles.UnionWith(finalMatched);
+        // 장애물에 알림
+        var hitObstacles = GameManager.Instance.obstacleManager.NotifyNearbyMatches(forObstacles);
+        
+        yield return null;
+
+        // 애니메이션 실행
+        foreach (var tile in finalMatched)
         {
             GameManager.Instance.StartCoroutine(tile.PlayDestroyAnimation(duration));
         }
 
-        // 장애물 애니메이션
         foreach (var obsTile in hitObstacles)
         {
             if (obsTile.GetComponent<IObstacle>()?.IsRemovable == true)
@@ -179,18 +234,18 @@ public class TileMatcher : MonoBehaviour
 
         yield return new WaitForSeconds(duration);
 
-        // 일반 타일 제거
-        foreach (var tile in matchedTiles)
+        // 타일 제거
+        foreach (var tile in finalMatched)
         {
             if (tile.Type != TileType.Egg)
             {
                 grid.Remove(tile.GridPosition);
                 tile.gameObject.SetActive(false);
+                tile.SetBomb(false, null);
                 TilePool.Instance.ReturnTile(tile);
             }
         }
 
-        // 장애물 제거
         foreach (var tile in hitObstacles)
         {
             if (tile.GetComponent<IObstacle>()?.IsRemovable == true)
@@ -202,7 +257,7 @@ public class TileMatcher : MonoBehaviour
         }
 
         // UI 갱신
-        int normalMatchCount = matchedTiles.Count(t => t.Type != TileType.Egg);
+        int normalMatchCount = finalMatched.Count(t => t.Type != TileType.Egg);
         GameManager.Instance.AddTile(normalMatchCount);
 
         int removedHearts = hitObstacles.Count(t =>
@@ -213,6 +268,69 @@ public class TileMatcher : MonoBehaviour
 
         GameManager.Instance.BlockInput(false);
     }
+
+    private List<List<Tile>> GroupMatches(List<Tile> matched)
+    {
+        var grid = gridManager.Grid;
+        var visited = new HashSet<Tile>();
+        var groups = new List<List<Tile>>();
+
+        foreach (var tile in matched)
+        {
+            if (visited.Contains(tile)) continue;
+
+            var group = new List<Tile>();
+            var queue = new Queue<Tile>();
+            queue.Enqueue(tile);
+            visited.Add(tile);
+
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                group.Add(current);
+
+                var neighbors = TileMatcher.GetOffsetNeighbors(current.GridPosition.x);
+                foreach (var off in neighbors)
+                {
+                    Vector2Int adj = current.GridPosition + off;
+                    if (grid.TryGetValue(adj, out var neighbor) &&
+                        matched.Contains(neighbor) &&
+                        !visited.Contains(neighbor) &&
+                        neighbor.Type == current.Type)
+                    {
+                        visited.Add(neighbor);
+                        queue.Enqueue(neighbor);
+                    }
+                }
+            }
+
+            groups.Add(group);
+        }
+
+        return groups;
+    }
+
+    private HashSet<Tile> GetBombExplosion(Tile bomb)
+    {
+        var result = new HashSet<Tile> { bomb };
+        var grid = gridManager.Grid;
+
+        // 중심 타일도 포함
+        result.Add(bomb);
+
+        var offsets = GetOffsetNeighbors(bomb.GridPosition.x);
+        foreach (var offset in offsets)
+        {
+            Vector2Int adj = bomb.GridPosition + offset;
+            if (grid.TryGetValue(adj, out var neighbor))
+            {
+                result.Add(neighbor);
+            }
+        }
+
+        return result;
+    }
+
 
     public bool TryFindFirstValidSwap(Dictionary<Vector2Int, Tile> grid, out Tile tileA, out Tile tileB)
     {

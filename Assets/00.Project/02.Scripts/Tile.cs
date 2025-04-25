@@ -9,6 +9,7 @@ public class Tile : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     public bool IsHintAnimating { get; private set; } = false;
     private Coroutine _hintRoutine;
+    public bool IsBomb { get; private set; } = false;
 
     public void Initialize(TileType type, Vector2Int gridPos, Sprite sprite)
     {
@@ -50,6 +51,13 @@ public class Tile : MonoBehaviour
 
         transform.localScale = originalScale;
         sr.color = new Color(1f, 1f, 1f, 0f);
+    }
+
+    public void SetBomb(bool isBomb, Sprite sprite)
+    {
+        IsBomb = isBomb;
+        if (isBomb && sprite != null)
+            transform.GetComponent<SpriteRenderer>().sprite = sprite;
     }
 
     // 힌트 애니메이션
