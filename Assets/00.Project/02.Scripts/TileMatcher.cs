@@ -221,7 +221,10 @@ public class TileMatcher : MonoBehaviour
         // 애니메이션 실행
         foreach (var tile in finalMatched)
         {
-            GameManager.Instance.StartCoroutine(tile.PlayDestroyAnimation(duration));
+            if (tile.Type != TileType.Egg)
+            {
+                GameManager.Instance.StartCoroutine(tile.PlayDestroyAnimation(duration));
+            }
         }
 
         foreach (var obsTile in hitObstacles)
