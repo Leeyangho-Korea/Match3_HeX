@@ -290,7 +290,7 @@ public class GameManager : MonoBehaviour
         
         yield return new WaitForSeconds(0.2f);
 
-        yield return StartCoroutine(ShakeBoardEffect(0.3f, 0.1f)); // (지속 시간, 강도)
+        yield return StartCoroutine(ShakeBoardEffect(0.4f, 0.1f)); // (지속 시간, 강도)
 
         // 1. 기존 타일 중 egg 외 제거
         foreach (var kv in grid.ToList())
@@ -299,16 +299,18 @@ public class GameManager : MonoBehaviour
 
             if (tile.Type != TileType.Egg && tile.IsBomb == false)
             {
-                tile.gameObject.SetActive(false);
-                TilePool.Instance.ReturnTile(tile);
-                grid.Remove(kv.Key);
+               // tile.gameObject.SetActive(false);
+            //    TilePool.Instance.ReturnTile(tile);
+             //   grid.Remove(kv.Key);
+             TileType type = (TileType)Random.Range(0, 6);
+                tile.SetType(type, TilePool.Instance.GetSprite(type));
             }
         }
 
-        yield return new WaitForSeconds(0.2f);
+        //      yield return new WaitForSeconds(0.2f);
 
-        yield return StartCoroutine(_tileSpawner.FillEmptyTiles());
-
+        //   yield return StartCoroutine(_tileSpawner.FillEmptyTiles());
+        yield return new WaitForSeconds(1f);
         _info_Shuffle.gameObject.SetActive(false);
         _reshuffleBoard = false;
         yield return null;
@@ -316,6 +318,7 @@ public class GameManager : MonoBehaviour
         yield return StartCoroutine(CheckMatches());
         BlockInput(false);
     }
+
 
     private IEnumerator ShakeBoardEffect(float duration, float magnitude)
     {

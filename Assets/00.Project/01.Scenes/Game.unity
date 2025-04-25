@@ -4740,7 +4740,7 @@ MonoBehaviour:
   _text_Tile: {fileID: 1476012537}
   readyText: {fileID: 837257527}
   goText: {fileID: 2119974471}
-  slideDuration: 0.5
+  slideDuration: 0.25
   holdTime: 0.8
   _info_Shuffle: {fileID: 488235406}
 --- !u!114 &1969936067

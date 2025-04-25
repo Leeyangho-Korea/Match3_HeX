@@ -43,7 +43,7 @@ public class TilePool : MonoBehaviour
 
         TileType type;
 
-        // 팽이 개수 제한 + 확률 체크
+        // 장애물 개수 제한 + 확률 체크
         bool spawnPeg = currentSpinningTopCount < spinningTopLimit && Random.value < 0.1f;
 
         if (spawnPeg)
@@ -59,7 +59,7 @@ public class TilePool : MonoBehaviour
         {
             // 일반 타일 타입 선택
             int max = tileSprites.Length;
-            type = (TileType)Random.Range(0, 6); // 팽이를 enum 마지막에 배치했다는 가정
+            type = (TileType)Random.Range(0, 6);
 
        
             // 기존에 붙어있던 컴포넌트 제거 (재사용된 경우 대비)
@@ -88,6 +88,11 @@ public class TilePool : MonoBehaviour
         tile.gameObject.SetActive(false);
         tile.transform.SetParent(transform);
         tilePool.Enqueue(tile);
+    }
+
+    public Sprite GetSprite(TileType type)
+    {
+        return tileSprites[(int)type];
     }
 
     public Sprite GetBombSprite(TileType tileType)
