@@ -22,32 +22,36 @@ public class GameManager : MonoBehaviour
     [SerializeField] Text _text_Time;
     [SerializeField] Text _text_Tile;
     // 시간 표현
-    private float elapsedTime = 0f;
-    private float _timeUpdateTick = 0f;
+    private float elapsedTime = 0f; // 총 경과 시간
+    private float _timeUpdateTick = 0f; 
 
     // 시작했는지?
     private bool isStart = false;
     // 힌트 표현
     private float _timeSinceLastMatch = 0f;
+    // 자동힌트 주기
     private const float autoHintDelay = 3f;
     private bool _waitingForAutoHint = false;
 
-    private bool _isFilling = false; // 타일이 채워지는 중인지
+    // 타일이 채워지는 중인지
+    private bool _isFilling = false; 
     public bool IsFilling { get => _isFilling; set => _isFilling = value; } 
 
     // 입력 차단 카운터 방식
     private int _blockCounter = 0;
     public bool IsInputBlocked => _blockCounter > 0;
 
-    bool _reshuffleBoard = false; //보드 셔플중인지
+    // 보드 셔플 중 여부
+    bool _reshuffleBoard = false;
+    
+
+    // 사용자 입력 차단 여부 관리 함수
     public void BlockInput(bool block)
     {
         if (block)
             _blockCounter++;
         else
             _blockCounter = Mathf.Max(0, _blockCounter - 1);
-
-        //Debug.Log($"[GameManager] Input Block Count: {_blockCounter}");
     }
 
     private void Awake() => Instance = this;
@@ -87,6 +91,8 @@ public class GameManager : MonoBehaviour
             StartCoroutine(AutoHint());
         }
 
+
+#if UNITY_EDITOR
         if(Input.GetKeyDown(KeyCode.Space))
         {
            StartCoroutine(ReshuffleBoard());
@@ -95,8 +101,11 @@ public class GameManager : MonoBehaviour
         {
             StartCoroutine(AutoHint());
         }
+#endif
     }
 
+
+    // 게임 시작 시퀀스
     private IEnumerator GameStartSequence()
     {
         BlockInput(true);
@@ -118,6 +127,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] private float slideDuration = 0.5f;
     [SerializeField] private float holdTime = 0.8f;
 
+
+    // 'Ready' → 'Go' 텍스트 애니메이션
     private IEnumerator PlayReadyStartUI()
     {
         yield return StartCoroutine(PlayTextZoom(readyText));
@@ -125,6 +136,8 @@ public class GameManager : MonoBehaviour
         yield return StartCoroutine(PlayTextZoom(goText));
         yield return new WaitForSeconds(0.3f);
     }
+
+    // 텍스트 커졌다 줄어드는 줌 애니메이션
     private IEnumerator PlayTextZoom(RectTransform target)
     {
         TextMeshProUGUI textComp = target.GetComponent<TextMeshProUGUI>();
@@ -162,18 +175,6 @@ public class GameManager : MonoBehaviour
         target.gameObject.SetActive(false);
     }
 
-    private IEnumerator SlideRectTransform(RectTransform rt, Vector2 from, Vector2 to, float duration)
-    {
-        float elapsed = 0f;
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            rt.anchoredPosition = Vector2.Lerp(from, to, elapsed / duration);
-            yield return null;
-        }
-        rt.anchoredPosition = to;
-    }
-
     // 매칭 검사
     private IEnumerator CheckMatches()
     {
@@ -194,6 +195,8 @@ public class GameManager : MonoBehaviour
             yield return StartCoroutine(_tileSpawner.FillEmptyTiles());
         }
 
+
+        // 더 이상 스왑 가능한 조합이 없다면 셔플
         if (!tileMatcher.TryFindFirstValidSwap(gridManager.Grid, out _, out _))
         {
             yield return StartCoroutine(ReshuffleBoard());
@@ -255,7 +258,7 @@ public class GameManager : MonoBehaviour
         _isSwapping = false;
     }
 
-    // 스왑기능
+    // 실제 Grid 데이터에서 타일 위치 스왑
     private void SwapGrid(Tile a, Tile b)
     {
         var grid = gridManager.Grid;
@@ -270,6 +273,7 @@ public class GameManager : MonoBehaviour
     // 타일 재셔플
     [SerializeField] private GameObject _info_Shuffle;
 
+    // 보드 셔플
     private IEnumerator ReshuffleBoard()
     {
         Debug.Log("[Reshuffle]");
@@ -313,7 +317,7 @@ public class GameManager : MonoBehaviour
         BlockInput(false);
     }
 
-
+    // 보드 흔들림 효과
     private IEnumerator ShakeBoardEffect(float duration, float magnitude)
     {
         Transform board = gridManager.transform; // 또는 tile container parent
@@ -335,6 +339,8 @@ public class GameManager : MonoBehaviour
     }
 
 
+
+    // 점수 타일 수 증가
     public int tileCount { get; private set; } = 0;
     public int heartCount { get; private set; } = 0;
     public void AddTile(int amount)
@@ -343,13 +349,14 @@ public class GameManager : MonoBehaviour
         _text_Tile.text = $"{tileCount}";
     }
 
+    // 자동 힌트 실행
     public void AddHeart(int amount)
     {
         heartCount += amount;
         _text_Heart.text = $"{heartCount}";
     }
 
-
+    // 힌트 리셋
     private IEnumerator AutoHint()
     {
         yield return new WaitForEndOfFrame(); // 살짝 딜레이
@@ -425,7 +432,7 @@ public class GameManager : MonoBehaviour
         yield return StartCoroutine(_tileSpawner.FillEmptyTiles());
         yield return StartCoroutine(CheckMatches());
     }
-    // 스페셜 폭발
+    // 폭탄 하나 중심으로 n반경 터뜨리가ㅣ
     private HashSet<Tile> GetExplosionTiles(Tile center, int radius)
     {
         var result = new HashSet<Tile>();
@@ -461,7 +468,7 @@ public class GameManager : MonoBehaviour
         return result;
     }
 
-    // 스페셜 폭발 반경의 폭발 반경
+    // 스페셜 폭발 : 2링 이후 1링 확장 연쇄 기능
     private HashSet<Tile> GetChainedExplosionTiles(Tile a, Tile b, int firstRadius, int chainRadius)
     {
         var result = new HashSet<Tile>();
