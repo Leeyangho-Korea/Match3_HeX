@@ -2,6 +2,9 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 스플래시 관리 클래스
+/// </summary>
 public class Splash : MonoBehaviour
 {
     [SerializeField] private CanvasGroup canvasGroup;

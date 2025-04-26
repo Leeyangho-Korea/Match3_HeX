@@ -1,6 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// 타일 풀링으로 관리하는 클래스
+/// </summary>
+
 public class TilePool : MonoBehaviour
 {
     public static TilePool Instance;
@@ -51,7 +55,7 @@ public class TilePool : MonoBehaviour
             type = TileType.Egg;
             currentSpinningTopCount++;
 
-            //  컴포넌트 동적으로 붙이기 (프리팹 따로 안 써도 됨!)
+            //  컴포넌트 동적으로 생성
             if (tile.GetComponent<EggObstacle>() == null)
                 tile.gameObject.AddComponent<EggObstacle>();
         }
@@ -68,7 +72,7 @@ public class TilePool : MonoBehaviour
                 Destroy(peg);
         }
 
-        // 위치 설정 포함 초기화 (꼭 필요!)
+        // 위치 설정 포함 초기화
         tile.Initialize(type, gridPos, tileSprites[(int)type]);
         tile.GetComponent<SpriteRenderer>().color = Color.white; // 색상 초기화
         tile.SetBomb(false, null);

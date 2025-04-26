@@ -1,6 +1,13 @@
 using System.Collections;
 using UnityEngine;
 
+/// <summary>
+/// 타일 오브젝트 관리 클래스
+/// 타일의 정보 세팅
+/// 타일별 매칭 애니메이션
+/// 힌트 애니메이션
+/// 폭발(특수타일) 여부 관리
+/// </summary>
 public class Tile : MonoBehaviour
 {
     public Vector2Int GridPosition { get; set; }

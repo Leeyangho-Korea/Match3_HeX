@@ -1,6 +1,10 @@
 using System.Collections;
 using UnityEngine;
 
+
+/// <summary>
+/// Egg 장애물 관리 클래스
+/// </summary>
 public class EggObstacle : MonoBehaviour, IObstacle
 {
     private int hitCount = 0;

@@ -3,6 +3,9 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+/// <summary>
+/// 페이드 인아웃 연출
+/// </summary>
 public class FadeManager : MonoBehaviour
 {
     public static FadeManager Instance { get; private set; }
@@ -41,8 +44,6 @@ public class FadeManager : MonoBehaviour
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
         while (!asyncLoad.isDone)
             yield return null;
-
-     //   yield return StartCoroutine(FadeIn());
     }
 
     public IEnumerator FadeIn()

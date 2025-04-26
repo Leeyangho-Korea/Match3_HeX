@@ -2,12 +2,15 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
+/// <summary>
+/// 타일 그리드 매니저
+/// </summary>
 public class GridManager : MonoBehaviour
 {
     [Header("Grid Settings")]
     public int[] columnHeights = { 3, 4, 5, 6, 5, 4, 3 };
-    public float tileWidth = 1f;   // 타일 가로 간격
-    public float tileHeight = 0.866f; // 세로 간격 (√3 / 2 ≈ 0.866)
+    public float tileWidth = 1.24f;   // 타일 가로 간격
+    public float tileHeight = 1.11f; // 타일 세로 간격
 
  
     [ContextMenu("Generate Grid")]

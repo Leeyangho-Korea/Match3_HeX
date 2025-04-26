@@ -3,53 +3,70 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+
+/// <summary>
+/// 타일 매칭 관리 클래스
+/// 타일의 매칭 여부 판단 
+/// 매칭 타일들을 그룹별로 나누기
+/// 매칭 타일 제거
+/// 타일들의 매칭 시뮬레이션 (힌트, 타일 재배치 여부판단)
+/// </summary>
+
 public class TileMatcher : MonoBehaviour
 {
     private GridManager gridManager => GameManager.Instance.gridManager;
 
+    private static Vector2Int[] _leftOffsets = new[]
+    {
+        new Vector2Int( 0, 1),      //상 
+        new Vector2Int( 0, -1),     //하
+        new Vector2Int( 1, 1),      //우상
+        new Vector2Int(-1, -1),     //좌하
+        new Vector2Int(-1, 0),      //좌상
+        new Vector2Int( 1, 0)       //우하
+    };
+
+ 
+    private static Vector2Int[] _rightOffsets = new[]
+    {
+        new Vector2Int( 0, 1),      //상
+        new Vector2Int( 0, -1),     //하
+        new Vector2Int( 1, 0),      //우상
+        new Vector2Int(-1, 0),      //좌하
+        new Vector2Int(-1, 1),      //좌상
+        new Vector2Int( 1, -1)      //우하
+    };
+
+    private static Vector2Int[] _centerOffsets = new[]
+    {
+        new Vector2Int( 0, 1),      //상 
+        new Vector2Int( 0, -1),     //하
+        new Vector2Int( 1, 0),      //우상
+        new Vector2Int(-1, -1),     //좌하
+        new Vector2Int(-1, 0),      //좌상
+        new Vector2Int( 1, -1)      //우하
+    };
+
+    // 그리드 열별 방향 오프셋 반환
     public static Vector2Int[] GetOffsetNeighbors(int col)
     {
         int mid = GameManager.Instance.gridManager.columnHeights.Length / 2;
-        if (col < mid)
-        {
-            return new[] {
-                new Vector2Int( 0, 1),   // 상
-                new Vector2Int( 0, -1),  // 하
-                new Vector2Int( 1, 1),  //우상
-                new Vector2Int(-1, -1), //좌하
-                new Vector2Int(-1, 0), // 좌상
-                new Vector2Int( 1, 0) // 우하
-            };
-        }
-        else if (col > mid)
-        {
-            return new[] {
-                new Vector2Int( 0, 1),
-                new Vector2Int( 0, -1),
-                new Vector2Int( 1, 0),
-                new Vector2Int(-1, 0),
-                new Vector2Int(-1, 1),
-                new Vector2Int( 1, -1)
-            };
-        }
-        else
-        {
-            return new[] {
-                new Vector2Int( 0, 1),
-                new Vector2Int( 0, -1), 
-                new Vector2Int( 1, 0),
-                new Vector2Int(-1, -1),
-                new Vector2Int(-1, 0),
-                new Vector2Int( 1, -1)
-            };
-        }
+    
+        if (col < mid) 
+           return _leftOffsets;
+        else if (col > mid) 
+          return _rightOffsets;
+        else 
+          return _centerOffsets;
     }
 
+    // 타일의 매칭 가능여부 판단 (장애물이 아니고 같은 타입일 경우에만 true 반환)
     private bool IsMatchableTile(Tile tile, TileType type)
     {
         return tile.Type == type && tile.Type != TileType.Egg;
     }
 
+    // 전체 보드에서 매칭되는 타일 리스트 찾기
     public List<Tile> FindMatches(Dictionary<Vector2Int, Tile> grid)
     {
         var matched = new HashSet<Tile>();
@@ -95,6 +112,7 @@ public class TileMatcher : MonoBehaviour
         return matched.ToList();
     }
 
+    // 다이아몬드 패턴 매칭 찾기 (4타일 조건)
     private HashSet<Tile> FindDiamondMatches(Dictionary<Vector2Int, Tile> grid)
     {
         var matched = new HashSet<Tile>();
@@ -107,6 +125,7 @@ public class TileMatcher : MonoBehaviour
             if (centerType == TileType.Egg) continue;
             var centerOffsets = GetOffsetNeighbors(center.x);
 
+            // 탐색 그룹별 위치 조합
             var combos = new[] {
                 (0, 2, 5), (0, 4, 3),
                 (1, 3, 4), (1, 5, 2),
@@ -149,7 +168,7 @@ public class TileMatcher : MonoBehaviour
         return matched;
     }
 
-
+    // 매칭 타일 제거
     public IEnumerator ClearMatches(List<Tile> matchedTiles)
     {
         GameManager.Instance.BlockInput(true);
@@ -157,6 +176,9 @@ public class TileMatcher : MonoBehaviour
         var grid = gridManager.Grid;
         float duration = 0.35f;
 
+        // 폭탄이 된 개수
+        int transfomrBombCount =0; 
+        
         // 1. 매칭 그룹 분리
         var groups = GroupMatches(matchedTiles);
 
@@ -173,6 +195,7 @@ public class TileMatcher : MonoBehaviour
                 var bombTile = group[bombIndex];
                 bombTile.SetBomb(true, TilePool.Instance.GetBombSprite(bombTile.Type));
                 forObstacles.Add(bombTile);
+                transfomrBombCount ++;
                 foreach (var tile in group)
                 {
                     if (tile != bombTile)
@@ -185,7 +208,7 @@ public class TileMatcher : MonoBehaviour
             }
         }
 
-        // 연쇄 폭발은 그룹 루프 끝나고 처리!
+        // 연쇄 폭발은 그룹 루프 끝나고 처리
         var alreadyExploded = new HashSet<Tile>();
         bool chainReaction;
         do
@@ -261,7 +284,7 @@ public class TileMatcher : MonoBehaviour
 
         // UI 갱신
         int normalMatchCount = finalMatched.Count(t => t.Type != TileType.Egg);
-        GameManager.Instance.AddTile(normalMatchCount);
+        GameManager.Instance.AddTile(normalMatchCount+ transfomrBombCount);
 
         int removedHearts = hitObstacles.Count(t =>
             t.Type == TileType.Egg &&
@@ -272,6 +295,8 @@ public class TileMatcher : MonoBehaviour
         GameManager.Instance.BlockInput(false);
     }
 
+
+    //매칭 그룹을 BFS로 분리
     private List<List<Tile>> GroupMatches(List<Tile> matched)
     {
         var grid = gridManager.Grid;
@@ -280,10 +305,11 @@ public class TileMatcher : MonoBehaviour
 
         foreach (var tile in matched)
         {
+            // 방문했던 타일 무시
             if (visited.Contains(tile)) continue;
 
             var group = new List<Tile>();
-            var queue = new Queue<Tile>();
+            var queue = new Queue<Tile>(); // BFS 탐색용 큐
             queue.Enqueue(tile);
             visited.Add(tile);
 
@@ -293,15 +319,21 @@ public class TileMatcher : MonoBehaviour
                 group.Add(current);
 
                 var neighbors = TileMatcher.GetOffsetNeighbors(current.GridPosition.x);
+                
+                // 6방향 체크
                 foreach (var off in neighbors)
                 {
+                    // 인접 타일 좌표
                     Vector2Int adj = current.GridPosition + off;
+                    
+                    // 유효하고, 매칭된 목록에 있고, 방문하지 않았고, 같은 색이면
                     if (grid.TryGetValue(adj, out var neighbor) &&
                         matched.Contains(neighbor) &&
                         !visited.Contains(neighbor) &&
                         neighbor.Type == current.Type)
                     {
                         visited.Add(neighbor);
+                        // 다음 탐색
                         queue.Enqueue(neighbor);
                     }
                 }
@@ -313,6 +345,8 @@ public class TileMatcher : MonoBehaviour
         return groups;
     }
 
+
+    // 폭탄 주변 영향받는 타일 구하기
     private HashSet<Tile> GetBombExplosion(Tile bomb)
     {
         var result = new HashSet<Tile> { bomb };
@@ -335,6 +369,7 @@ public class TileMatcher : MonoBehaviour
     }
 
 
+    // 교환 가능한 두 타일 구하기 (힌트 및 보드 재배열 여부에서 사용)
     public bool TryFindFirstValidSwap(Dictionary<Vector2Int, Tile> grid, out Tile tileA, out Tile tileB)
     {
         tileA = null;

@@ -2,6 +2,9 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+/// <summary>
+/// 힌트 관리 클래스
+/// </summary>
 public class Hint : MonoBehaviour
 {
     private TileMatcher _matcher => GameManager.Instance.tileMatcher;

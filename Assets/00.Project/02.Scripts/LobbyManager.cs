@@ -2,6 +2,10 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
+
+/// <summary>
+/// 로비 씬 관리 클래스
+/// </summary>
 public class LobbyManager : MonoBehaviour
 {
     [Header("UI")]

@@ -2,6 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
+/// <summary>
+/// 장애물 관리 스크립트 
+/// 주변의 타일 매칭 이벤트 여부 확인
+/// </summary>
+
 public class ObstacleManager : MonoBehaviour
 {
     private GridManager gridManager;
