@@ -273,7 +273,8 @@ public class TileSpawner : MonoBehaviour
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            obj.position = Vector3.Lerp(start, target, elapsed / duration);
+            obj.position = Vector3.Slerp(start, target, elapsed / duration);
+            //obj.position = Vector3.Lerp(start, target, elapsed / duration);
             yield return null;
         }
 
